@@ -92,6 +92,10 @@ type RuntimeConfig struct {
 	ShimConfig interface{}
 
 	Console string
+
+	//Determines how the VM should be connected to the
+	//the container network interface
+	InterNetworkModel vc.NetInterworkingModel
 }
 
 // AddKernelParam allows the addition of new kernel parameters to an existing
@@ -304,7 +308,7 @@ func containerCapabilities(s CompatOCISpec) (vc.LinuxCapabilities, error) {
 	return c, nil
 }
 
-func networkConfig(ocispec CompatOCISpec) (vc.NetworkConfig, error) {
+func networkConfig(ocispec CompatOCISpec, config RuntimeConfig) (vc.NetworkConfig, error) {
 	linux := ocispec.Linux
 	if linux == nil {
 		return vc.NetworkConfig{}, ErrNoLinux
@@ -324,6 +328,7 @@ func networkConfig(ocispec CompatOCISpec) (vc.NetworkConfig, error) {
 			netConf.NetNSPath = n.Path
 		}
 	}
+	netConf.InterworkingModel = config.InterNetworkModel
 
 	return netConf, nil
 }
@@ -470,7 +475,7 @@ func PodConfig(ocispec CompatOCISpec, runtime RuntimeConfig, bundlePath, cid, co
 		return vc.PodConfig{}, err
 	}
 
-	networkConfig, err := networkConfig(ocispec)
+	networkConfig, err := networkConfig(ocispec, runtime)
 	if err != nil {
 		return vc.PodConfig{}, err
 	}
